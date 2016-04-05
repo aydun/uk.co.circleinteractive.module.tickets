@@ -11,7 +11,7 @@
 abstract class CRM_Event_Ticket {
     
     // Force extending classes to provide a human-readable name - ie: return ts('Name of template');
-    abstract public function name();
+    abstract static function name();
     
     public $pdf;
 
@@ -114,7 +114,7 @@ abstract class CRM_Event_Ticket {
 
         $this->preview = isset($params['preview']) and !empty($params['preview']) ? $params['preview'] : false;
         $this->inline  = (isset($params['output']) and $params['output'] == 'inline');
-        watchdog('andyw', 'ticket params = <pre>' . print_r($params, true) . '</pre>');
+        //watchdog('andyw', 'ticket params = <pre>' . print_r($params, true) . '</pre>');
         if (isset($params['additional_participants_same_person']))
             $this->additional_participants_same_person = $params['additional_participants_same_person'];
                 
@@ -134,7 +134,7 @@ abstract class CRM_Event_Ticket {
             
             if (!($batch_count % $cols)) {
                 $pdf->top += ((($page_height/* - $this->format['margin-top'] - $this->format['margin-bottom']*/) / ($rows - 1)) * 1.35);
-                watchdog('andyw', 'pdf->top = ' . $pdf->top);
+                //watchdog('andyw', 'pdf->top = ' . $pdf->top);
             } else
                 $pdf->left += ((($page_width/* - $this->format['margin-left'] - $this->format['margin-right']*/) / ($cols - 1)) * 1.35);
         
@@ -291,9 +291,9 @@ abstract class CRM_Event_Ticket {
                 'id'      => $params
             );
 
-        $result = civicrm_api($entity, 'get', $params);
-        if (!$result['is_error']) {
-            $this->$entity = reset($result['values']);
+        $result = civicrm_api($entity, 'getsingle', $params);
+        if (!array_key_exists('is_error', $result)){
+            $this->$entity = $result;
             return true;
         }
         $this->$entity = array();
@@ -302,7 +302,7 @@ abstract class CRM_Event_Ticket {
     }
     
     // page callback for ticket preview - output pdf data inline
-    public function preview() {
+    static function preview() {
         
         $template_class = $_GET['template'];
 
@@ -343,7 +343,7 @@ abstract class CRM_Event_Ticket {
         $pdf = &$this->pdf;
         $pdf->SetXY(55, 30);
         $pdf->SetFont('sourcesansprosemib', '', $pdf->fontSize + 4);
-        $pdf->MultiCell(84, 0, $this->event['title'], $pdf->border, 'C', false, 1, '', '', true, 0, false, true, 0, 'M');
+        $pdf->MultiCell(84, 0, $this->event['title'], $this->border, 'C', false, 1, '', '', true, 0, false, true, 0, 'M');
         $pdf->SetFont('sourcesanspro', '', $pdf->fontSize + 2);
 
         if ($this->event['location'] or $this->event['start_time']) {
@@ -421,7 +421,7 @@ abstract class CRM_Event_Ticket {
         $this->header_height = $pdf->getStringHeight(0, $details);
 
         // Print the domain organization name and address       
-		$pdf->MultiCell(50, 20, $details, $this->border, 'L', false, 1, '', '', true, 0, false, true, 0, 'M');
+        $pdf->MultiCell(50, 20, $details, $this->border, 'L', false, 1, '', '', true, 0, false, true, 0, 'M');
     
     }
     

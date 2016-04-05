@@ -184,6 +184,7 @@ class CRM_Event_Form_Task_PrintTickets extends CRM_Event_Form_Task {
             }
         }
 
+        // pdf->Output($file, 'I') sends directly to the browser.  Handle zips
         if (count($rows) > 1 and isset($params['filename'])) {
              
             // create zip file
@@ -200,18 +201,6 @@ class CRM_Event_Form_Task_PrintTickets extends CRM_Event_Form_Task {
 
             @unlink($zipfile_path);
         
-        } else {
-
-            // for single ticket, output pdf ..
-            $filename = explode(DIRECTORY_SEPARATOR, $params['filename']);
-            $filename = end($filename);
-           
-            header("Content-type: application/pdf");
-            header('Content-disposition: attachment; filename="' . $filename . '"');
-            readfile($params['filename']);
-            
-            @unlink($params['filename']);
-
         }
 
         if ($no_template_warn) {

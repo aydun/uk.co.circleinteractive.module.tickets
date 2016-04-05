@@ -34,7 +34,7 @@ class CRM_Event_Ticket_Example extends CRM_Event_Ticket {
 
     }
     
-    public function name() {
+    static function name() {
         return ts('Example');
     }
     

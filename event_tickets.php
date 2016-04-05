@@ -117,15 +117,14 @@ function event_tickets_civicrm_buildForm($formName, &$form) {
     if (array_slice(explode('_', $formName), 0, 4) === array('CRM', 'Event', 'Form', 'ManageEvent')) {
                     
         // add custom resources
-        $extension = end(explode(DIRECTORY_SEPARATOR, __DIR__));
+        $extension = 'uk.co.circleinteractive.module.tickets';
         CRM_Core_Resources::singleton()->addStyleFile($extension, 'css/admin-form.css');
         CRM_Core_Resources::singleton()->addScriptFile($extension, 'js/admin-form.js');
         
         // if we're the 'Registration' (or 'Thankyou' in the case of contributions)
         // component of one of the above set of forms, apply form customizations 
-        switch (end(explode('_', $formName))) {
-            
-            case 'Registration':                
+        switch ($formName) {
+            case 'CRM_Event_Form_ManageEvent_Registration':
                 
                 $config   = &CRM_Core_Config::singleton();
                 $template = &CRM_Core_Smarty::singleton();
@@ -309,7 +308,8 @@ function event_tickets_load_templates() {
                         // exist, which is wot an include path duz innit
                         if (!in_array($entry, $templates)) {
                             // infer class name from filename and run 'name' method of that class 
-                            $classname             = 'CRM_Event_Ticket_' . reset(explode('.', $entry));
+                            $filename_parts        = explode('.', $entry);
+                            $classname             = 'CRM_Event_Ticket_' . reset($filename_parts);
                             $templates[$classname] = call_user_func(array($classname, 'name'));
                         }
                     }

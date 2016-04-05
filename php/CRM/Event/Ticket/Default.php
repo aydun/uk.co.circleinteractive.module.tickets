@@ -27,7 +27,7 @@ class CRM_Event_Ticket_Default extends CRM_Event_Ticket {
         parent::__construct();
     }
     
-    public function name() {
+    static function name() {
         return ts('Default');
     }
     

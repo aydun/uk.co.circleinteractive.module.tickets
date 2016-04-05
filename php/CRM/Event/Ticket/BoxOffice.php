@@ -57,7 +57,7 @@ class CRM_Event_Ticket_BoxOffice extends CRM_Event_Ticket {
 
     }
     
-    public function name() {
+    static function name() {
         return ts('Box Office');
     }
 
