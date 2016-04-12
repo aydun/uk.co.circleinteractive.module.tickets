@@ -137,8 +137,8 @@ class CRM_Event_Ticket_Example extends CRM_Event_Ticket {
         $pdf->MultiCell(30, 0.3, 'CF# ' . str_pad($this->contribution['id'], 6, '0', STR_PAD_LEFT), 0, 'L', true, 1, '', '', true, 0, false, true, 0, 'M');
         $pdf->SetXY($pdf->left + 141.3, $pdf->GetY() + $line_spacing);
         $pdf->MultiCell(30, 0.3, 'PID: ' . str_pad($this->contact['id'], 6, '0', STR_PAD_LEFT), 0, 'L', true, 1, '', '', true, 0, false, true, 0, 'M');
-        //$pdf->SetXY($pdf->left + 73.3, $pdf->GetY() + $line_spacing);
-        //$pdf->MultiCell(30, 0.3, $this->contact['last_name'] . ', ' . $this->contact['first_name'], 0, 'L', true, 1, '', '', true, 0, false, true, 0, 'M');
+        $pdf->SetXY($pdf->left + 141.3, $pdf->GetY() + $line_spacing);
+        $pdf->MultiCell(30, 0.3, $this->contact['sort_name'], 0, 'L', true, 1, '', '', true, 0, false, true, 0, 'M');
         $pdf->SetXY($pdf->left + 141.3, $pdf->GetY() + $line_spacing);
         $pdf->MultiCell(30, 0.3, date('mdyHi', strtotime($this->participant['participant_register_date'])), 0, 'L', true, 1, '', '', true, 0, false, true, 0, 'M');
         
