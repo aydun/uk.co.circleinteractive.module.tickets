@@ -15,9 +15,86 @@ function event_tickets_civicrm_alterMailParams(&$params) {
 
   static $runCount = 0;
 
-  //watchdog('andyw', 'alterMailParams - params = <pre>' . print_r($params, TRUE) . '</pre>');
-
   switch (TRUE) {
+    case $params['groupName'] == 'msg_tpl_workflow_event' and $params['valueName'] == 'event_offline_receipt':
+      // NB - this duplicates some of online code, but may refactor to use this for both
+      $contact_id = $params['contactId'];
+      // We only have the contact_id to work with, but would like a participant id.
+      // We'll assume the most recent participant record for this contact is the right one ...
+      $primary_participant = civicrm_api3('Participant', 'getsingle', array(
+        'contact_id' => $contact_id,
+        'return' => array('partipant_id', 'event_id'),
+        'options' => array('sort' => "participant_id DESC", 'limit' => 1),
+      ));
+      $event_id = $primary_participant['event_id'];
+      $primary_participant_id = $primary_participant['participant_id'];
+
+      $template_class = event_tickets_get_template_for_event($event_id);
+      if (!$template_class) {
+        // Nothing to do if there's no template
+        return;
+      }
+      $event_title = civicrm_api3('Event', 'getvalue', array('return' => 'event_title', 'event_id' => $event_id));
+
+      // Get additional participants
+      // ... but I think you can't add multiple participants from an off-line signup so this is not needed
+      // civicrm_api3('Participant', 'get', array('registered_by_id' => $primary_participant_id)) ... should work
+      // but returns all participant.
+      $dao = CRM_Core_DAO::executeQuery("
+        SELECT id FROM civicrm_participant WHERE registered_by_id = %1
+        ", array(
+          1 => array($primary_participant_id, 'Positive'),
+        )
+      );
+      $participants = array($primary_participant_id);
+      while ($dao->fetch()) {
+        $participants[] = $result->id;
+      }
+
+      // original online version seems to have extra complexity for unused functionality
+      // around additional participant customizations
+      // simplified version here:
+      $params['attachments'] = array();
+      $temp_files            = array();
+
+      $ticket = new $template_class();
+      $tmp_filename = sys_get_temp_dir() . DIRECTORY_SEPARATOR . md5(microtime(TRUE)) . '.pdf';
+
+      // Loop through participants and attach all tickets to the main participant email
+      $num_participants = count($participants) + 1;
+      foreach ($participants as $participant_id) {
+        $pdf = array(
+          'participant_id'         => $participant_id,
+          'event_id'               => $event_id,
+          'filename'               => $tmp_filename,
+          //'additional_participants_same_person' =>
+          //    isset($params['tplParams']['additional_participants_same_person']) ?
+          //        $params['tplParams']['additional_participants_same_person'] : 0,
+          'additional_participants_same_person' => 0,
+          'num_participants' => $num_participants,
+        );
+        $ticket->create($pdf);
+      } // end foreach
+      $temp_files[] = $pdf['filename'];
+
+      // output to temp file (this will be deleted after it's been attached to the email)
+      $ticket->pdf->Output($pdf['filename'], 'F');
+
+      // attach the new attachment ..
+      $params['attachments'] = array(array(
+        'fullPath'  => $pdf['filename'],
+        'mime_type' => 'application/pdf',
+        'cleanName' => ts(
+          'Ticket%1 for %2.pdf',
+          array(
+            1 => count($participants) > 1 ? 's' : '',
+            2 => $event_title,
+          )
+        ),
+        ));
+
+      register_shutdown_function('event_tickets_cleanup', $temp_files);
+      break;
 
     // Event receipt ..
     case $params['groupName'] == 'msg_tpl_workflow_event' and $params['valueName'] == 'event_online_receipt':
