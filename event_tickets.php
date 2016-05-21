@@ -12,13 +12,16 @@
  * Implements hook_civicrm_alterMailParams().
  */
 function event_tickets_civicrm_alterMailParams(&$params) {
-
   static $runCount = 0;
 
-  switch (TRUE) {
-    case $params['groupName'] == 'msg_tpl_workflow_event' and $params['valueName'] == 'event_offline_receipt':
-      // NB - this duplicates some of online code, but may refactor to use this for both
-      $contact_id = $params['contactId'];
+  if ($params['groupName'] == 'msg_tpl_workflow_event') {
+    $is_offline = ($params['valueName'] == 'event_offline_receipt');
+    $is_online = ($params['valueName'] == 'event_online_receipt');
+    if (!$is_online and !$is_offline) {
+      return;
+    }
+    $contact_id = $params['contactId'];
+    if ($is_offline) {
       // We only have the contact_id to work with, but would like a participant id.
       // We'll assume the most recent participant record for this contact is the right one ...
       $primary_participant = civicrm_api3('Participant', 'getsingle', array(
@@ -27,15 +30,33 @@ function event_tickets_civicrm_alterMailParams(&$params) {
         'options' => array('sort' => "participant_id DESC", 'limit' => 1),
       ));
       $event_id = $primary_participant['event_id'];
-      $primary_participant_id = $primary_participant['participant_id'];
+      $primary_participant_id = $participant_id = $primary_participant['participant_id'];
+      $is_additional_participant = FALSE;
+    }
+    if ($is_online) {
+      // This gets called for primary participant as well as additionals
+      // For primary participants, we send all the tickets
+      // For additional participants, we send just their ticket
+      $event_id = $params['tplParams']['event']['id'];
+      $participant_id = $params['tplParams']['participantID'];
+      $primary_participant_id = $params['tplParams']['participant']['id'];
+      $is_additional_participant = $params['tplParams']['params']['additionalParticipant'];
+    }
 
-      $template_class = event_tickets_get_template_for_event($event_id);
-      if (!$template_class) {
-        // Nothing to do if there's no template
-        return;
-      }
-      $event_title = civicrm_api3('Event', 'getvalue', array('return' => 'event_title', 'event_id' => $event_id));
+    $template_class = event_tickets_get_template_for_event($event_id);
+    if (!$template_class) {
+      // Nothing to do if there's no template
+      return;
+    }
 
+    $event_title = civicrm_api3('Event', 'getvalue', array(
+      'return' => 'event_title',
+      'event_id' => $event_id,
+    ));
+
+    $participants = array($participant_id);
+
+    if (!$is_additional_participant) {
       // Get additional participants
       // ... but I think you can't add multiple participants from an off-line signup so this is not needed
       // civicrm_api3('Participant', 'get', array('registered_by_id' => $primary_participant_id)) ... should work
@@ -43,137 +64,73 @@ function event_tickets_civicrm_alterMailParams(&$params) {
       $dao = CRM_Core_DAO::executeQuery("
         SELECT id FROM civicrm_participant WHERE registered_by_id = %1
         ", array(
-          1 => array($primary_participant_id, 'Positive'),
+          1 => array($participant_id, 'Positive'),
         )
       );
-      $participants = array($primary_participant_id);
       while ($dao->fetch()) {
-        $participants[] = $result->id;
+        $participants[] = $dao->id;
       }
+    }
 
-      // original online version seems to have extra complexity for unused functionality
-      // around additional participant customizations
-      // simplified version here:
-      $params['attachments'] = array();
-      $temp_files            = array();
+    // Find contribution, but might not be one
+    // Not sure this is needed ...
+    $result = civicrm_api3('ParticipantPayment', 'get', array(
+      'participant_id' => $primary_participant_id,
+      'return' => "contribution_id",
+      'sequential' => 1,
+    ));
+    if ($result['count'] > 0) {
+      $contribution_id = $result['values'][0]['contribution_id'];
+    }
+    else {
+      $contribution_id = NULL;
+    }
 
-      $ticket = new $template_class();
-      $tmp_filename = sys_get_temp_dir() . DIRECTORY_SEPARATOR . md5(microtime(TRUE)) . '.pdf';
+    // original online version seems to have extra complexity for unused functionality
+    // around additional participant customizations
+    // simplified version here:
+    $params['attachments'] = array();
+    $temp_files            = array();
 
-      // Loop through participants and attach all tickets to the main participant email
-      $num_participants = count($participants) + 1;
-      foreach ($participants as $participant_id) {
-        $pdf = array(
-          'participant_id'         => $participant_id,
-          'event_id'               => $event_id,
-          'filename'               => $tmp_filename,
-          //'additional_participants_same_person' =>
-          //    isset($params['tplParams']['additional_participants_same_person']) ?
-          //        $params['tplParams']['additional_participants_same_person'] : 0,
-          'additional_participants_same_person' => 0,
-          'num_participants' => $num_participants,
-        );
-        $ticket->create($pdf);
-      } // end foreach
-      $temp_files[] = $pdf['filename'];
+    $ticket = new $template_class();
+    $tmp_filename = sys_get_temp_dir() . DIRECTORY_SEPARATOR . md5(microtime(TRUE)) . '.pdf';
 
-      // output to temp file (this will be deleted after it's been attached to the email)
-      $ticket->pdf->Output($pdf['filename'], 'F');
+    // Loop through participants and attach all tickets to the main participant email
+    $num_participants = count($participants) + 1;
+    foreach ($participants as $part_id) {
+      $pdf = array(
+        'participant_id'         => $part_id,
+        'event_id'               => $event_id,
+        'contribution_id'        => $contribution_id,
+        'filename'               => $tmp_filename,
+        //'additional_participants_same_person' =>
+        //    isset($params['tplParams']['additional_participants_same_person']) ?
+        //        $params['tplParams']['additional_participants_same_person'] : 0,
+        'additional_participants_same_person' => 0,
+        // 'num_participants' => $num_participants,
+      );
+      $ticket->create($pdf, $is_additional_participant);
+    }
+    $temp_files[] = $pdf['filename'];
 
-      // attach the new attachment ..
-      $params['attachments'] = array(array(
-        'fullPath'  => $pdf['filename'],
-        'mime_type' => 'application/pdf',
-        'cleanName' => ts(
-          'Ticket%1 for %2.pdf',
-          array(
-            1 => count($participants) > 1 ? 's' : '',
-            2 => $event_title,
-          )
-        ),
-        ));
+    // output to temp file (this will be deleted after it's been attached to the email)
+    $ticket->pdf->Output($pdf['filename'], 'F');
 
-      register_shutdown_function('event_tickets_cleanup', $temp_files);
-      break;
+    // attach the new attachment ..
+    $params['attachments'] = array(array(
+      'fullPath'  => $pdf['filename'],
+      'mime_type' => 'application/pdf',
+      'cleanName' => ts(
+        'Ticket%1 for %2.pdf',
+        array(
+          1 => count($participants) > 1 ? 's' : '',
+          2 => $event_title,
+        )
+      ),
+      ));
 
-    // Event receipt ..
-    case $params['groupName'] == 'msg_tpl_workflow_event' and $params['valueName'] == 'event_online_receipt':
-
-      if ($template_class = event_tickets_get_template_for_event($params['tplParams']['event']['id'])) {
-
-        // Ensure mail sends only for main participant (ie: not for any additional participants)
-        if (isset($params['tplParams']['params']['additionalParticipant']) &&
-          !empty($params['tplParams']['params']['additionalParticipant'])
-        ) {
-          $params['abortMailSend'] = TRUE;
-          return;
-        }
-
-        // If multiple participants, construct an array of participant ids, otherwise construct
-        // an array containing a single participant id
-        $participants = array($params['tplParams']['participantID']);
-        $result = CRM_Core_DAO::executeQuery("
-          SELECT id FROM civicrm_participant WHERE registered_by_id = %1
-          ", array(
-            1 => array($participants[0], 'Positive'),
-          )
-        );
-        while ($result->fetch()) {
-          $participants[] = $result->id;
-        }
-        $params['attachments'] = array();
-        $temp_files            = array();
-
-        $ticket = new $template_class();
-        $tmp_filename = sys_get_temp_dir() . DIRECTORY_SEPARATOR . md5(microtime(TRUE)) . '.pdf';
-
-        // Loop through participants and attach all tickets to the main participant email
-        foreach ($participants as $participant_id) {
-
-          // Inner loop to take account of additional participant customizations
-          if (isset($params['tplParams']['additional_participants_same_person'])) {
-            $num_participants = $params['tplParams']['additional_participants_same_person'] + 1;
-          }
-          else {
-            $num_participants = 1;
-          }
-          for ($i = 0; $i < $num_participants; $i++) {
-
-            $pdf = array(
-              'participant_id'         => $participant_id,
-              'event_id'               => $params['tplParams']['event']['id'],
-              'filename'               => $tmp_filename,
-              //'additional_participants_same_person' =>
-              //    isset($params['tplParams']['additional_participants_same_person']) ?
-              //        $params['tplParams']['additional_participants_same_person'] : 0,
-              'additional_participants_same_person' => 0,
-              'num_participants' => $num_participants,
-            );
-            $ticket->create($pdf);
-            $temp_files[] = $pdf['filename'];
-          }
-        } // end foreach
-      }
-
-      // output to temp file (this will be deleted after it's been attached to the email)
-      $ticket->pdf->Output($pdf['filename'], 'F');
-
-      // attach the new attachment ..
-      $params['attachments'] = array(array(
-        'fullPath'  => $pdf['filename'],
-        'mime_type' => 'application/pdf',
-        'cleanName' => ts(
-          'Ticket%1 for %2.pdf',
-          array(
-            1 => count($participants) > 1 ? 's' : '',
-            2 => $params['tplParams']['event']['title'],
-          )
-        ),
-        ));
-
-      register_shutdown_function('event_tickets_cleanup', $temp_files);
-
-      break;
+    register_shutdown_function('event_tickets_cleanup', $temp_files);
+    // Programmer note: to suppress sending the mail, set $params['abortMailSend'] = TRUE; and return
   }
 }
 

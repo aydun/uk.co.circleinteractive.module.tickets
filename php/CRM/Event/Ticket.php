@@ -165,19 +165,7 @@ abstract class CRM_Event_Ticket {
       $this->loadEntity('participant', $params['participant_id']);
       $this->loadEntity('event', $params['event_id']);
       $this->loadEntity('contact', $this->participant['contact_id']);
-
-      if ($contribution_id = CRM_Core_DAO::singleValueQuery("
-          SELECT contribution_id FROM civicrm_participant_payment
-          WHERE participant_id = %1
-      ", array(
-        1 => array($params['participant_id'], 'Positive'),
-      )
-      )) {
-        $this->loadEntity('contribution', $contribution_id);
-      }
-      else {
-        $this->contribution = array();
-      }
+      $this->loadEntity('contribution', $params['contribution_id']);
 
       // Retrieve event address using loc_block_id
       if (isset($this->event['loc_block_id']) and $this->event['loc_block_id'] and $address_id = CRM_Core_DAO::singleValueQuery("
@@ -186,8 +174,7 @@ abstract class CRM_Event_Ticket {
         1 => array($this->event['loc_block_id'], 'Positive'),
       )
       )) {
-        $result = civicrm_api('address', 'get', array(
-            'version' => 3,
+        $result = civicrm_api3('address', 'get', array(
             'id'      => $address_id,
         ));
         if (!$result['is_error']) {
@@ -289,16 +276,16 @@ abstract class CRM_Event_Ticket {
   }
 
   public function loadEntity($entity, $params) {
-    if (is_array($params)) {
-      $params += array('version' => 3);
+    if (is_null($params)) {
+      $this->$entity = array();
+      return FALSE;
     }
-    else {
+    if (!is_array($params)) {
       $params = array(
-        'version' => 3,
         'id'      => $params,
       );
     }
-    $result = civicrm_api($entity, 'getsingle', $params);
+    $result = civicrm_api3($entity, 'getsingle', $params);
     if (!array_key_exists('is_error', $result)) {
       $this->$entity = $result;
       return TRUE;
