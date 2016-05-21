@@ -173,8 +173,19 @@ class CRM_Event_Form_Task_PrintTickets extends CRM_Event_Form_Task {
         $params['filename'] .= ' (' . (++$i) . ').pdf';
       }
 
-      $params += $row; // merge row data with params
-      $ticket->create($params, $is_reprint = TRUE);
+      $pdf = array(
+        'participant_id'         => $row['participant_id'],
+        'event_id'               => $row['event_id'],
+        // 'contribution_id'        => $contribution_id,
+        'filename'               => $params['filename'],
+        //'additional_participants_same_person' =>
+        //    isset($params['tplParams']['additional_participants_same_person']) ?
+        //        $params['tplParams']['additional_participants_same_person'] : 0,
+        'additional_participants_same_person' => 0,
+        // 'num_participants' => $num_participants,
+      );
+
+      $ticket->create($pdf, $is_reprint = TRUE);
 
       if (count($rows) > 1) {
         $ticket->pdf->Output($params['filename'], 'F');
