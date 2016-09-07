@@ -68,7 +68,6 @@ class CRM_Event_Ticket_Example extends CRM_Event_Ticket {
 
   public function printBody() {
     $pdf = &$this->pdf;
-
     //$background_color = array(6, 3, 98);        // dark blue
     $background_color = array(225, 225, 225);     // grey
     $white            = array(255, 255, 255);
@@ -132,6 +131,8 @@ class CRM_Event_Ticket_Example extends CRM_Event_Ticket {
     $pdf->MultiCell(30, 0.3, 'PID: ' . str_pad($this->contact['id'], 6, '0', STR_PAD_LEFT), 0, 'L', TRUE, 1, '', '', TRUE, 0, FALSE, TRUE, 0, 'M');
     $pdf->SetXY($pdf->left + 141.3, $pdf->GetY() + $line_spacing);
     $pdf->MultiCell(30, 0.3, $this->contact['sort_name'], 0, 'L', TRUE, 1, '', '', TRUE, 0, FALSE, TRUE, 0, 'M');
+    $pdf->SetXY($pdf->left + 141.3, $pdf->GetY() + $line_spacing);
+    $pdf->MultiCell(30, 0.3, $this->membership['membership_name'], 0, 'L', TRUE, 1, '', '', TRUE, 0, FALSE, TRUE, 0, 'M');
     $pdf->SetXY($pdf->left + 141.3, $pdf->GetY() + $line_spacing);
     $pdf->MultiCell(30, 0.3, date('mdyHi', strtotime($this->participant['participant_register_date'])), 0, 'L', TRUE, 1, '', '', TRUE, 0, FALSE, TRUE, 0, 'M');
 

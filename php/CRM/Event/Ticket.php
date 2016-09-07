@@ -98,7 +98,6 @@ abstract class CRM_Event_Ticket {
   final public function create(&$params, $is_reprint = FALSE) {
 
     static $batch_count = 0;
-
     $pdf = &$this->pdf;
 
     $rows = isset($this->format['multiple']['rows']) ? $this->format['multiple']['rows'] : 1;
@@ -111,7 +110,6 @@ abstract class CRM_Event_Ticket {
 
       // initialize tcpdf instance ..
       $pdf = new CRM_Utils_PDF_Ticket($this->format, $this->format['metric']);
-
       // set basic defaults
       $pdf->open();
       $pdf->setPrintHeader(FALSE);
@@ -167,6 +165,21 @@ abstract class CRM_Event_Ticket {
       $this->loadEntity('contact', $this->participant['contact_id']);
       $this->loadEntity('contribution', $params['contribution_id']);
 
+      // get membership (if any)
+      $res = civicrm_api3('membership', 'get', array(
+        'sequential' => 1,
+        'contact_id' => $this->participant['contact_id'],
+        'status_id' => array("New", "Current", "Grace"),
+        'options' => array('limit' => 1),
+      ));
+
+      if ($res['count'] == 1) {
+        $this->membership = $res['values'][0];
+      }
+      else {
+        $this->membership = array('membership_name' => "Non-member");
+      }
+
       // Retrieve event address using loc_block_id
       if (isset($this->event['loc_block_id']) and $this->event['loc_block_id'] and $address_id = CRM_Core_DAO::singleValueQuery("
           SELECT address_id FROM civicrm_loc_block WHERE id = %1
@@ -190,6 +203,7 @@ abstract class CRM_Event_Ticket {
       $this->contact            = $this->getDummyDetails('contact');
       $this->contribution       = $this->getDummyDetails('contribution');
       $this->event              = $this->getDummyDetails('event');
+      $this->membership         = $this->getDummyDetails('membership');
 
     }
 
@@ -200,11 +214,9 @@ abstract class CRM_Event_Ticket {
   }
 
   public function generateTicket(&$params) {
-
     $this->printHeader();
     $this->printBody();
     $this->printFooter();
-
   }
 
   protected function getDummyDetails($entity) {
@@ -238,6 +250,9 @@ abstract class CRM_Event_Ticket {
           'Town / City',
           'Postal Code',
         ),
+      ),
+      'membership' => array(
+        'membership_name' => 'VIP member',
       ),
     );
     return isset($details[$entity]) ? $details[$entity] : array();
@@ -337,7 +352,6 @@ abstract class CRM_Event_Ticket {
   }
 
   public function printBody() {
-
     $pdf = &$this->pdf;
     $pdf->SetXY(55, 30);
     $pdf->SetFont('sourcesansprosemib', '', $pdf->fontSize + 4);
