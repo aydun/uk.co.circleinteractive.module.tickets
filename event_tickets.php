@@ -40,7 +40,7 @@ function event_tickets_civicrm_alterMailParams(&$params) {
       $event_id = $params['tplParams']['event']['id'];
       $participant_id = $params['tplParams']['participantID'];
       $primary_participant_id = $params['tplParams']['participant']['id'];
-      $is_additional_participant = $params['tplParams']['params']['additionalParticipant'];
+      $is_additional_participant = ($participant_id != $primary_participant_id);
     }
 
     $template_class = event_tickets_get_template_for_event($event_id);
