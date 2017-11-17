@@ -359,6 +359,16 @@
               class="description">{ts}You may specify one or more email addresses to receive a blind carbon copy (bcc) of the confirmation email. Multiple email addresses should be separated by a comma (e.g. jane@example.org, paula@example.org).{/ts}</span>
           </td>
         </tr>
+        <tr class="crm-event-manage-registration-form-block-ticket_attach">
+         <td scope="row" class="label" width="20%">{$form.ticket_attach.label}</td>
+         <td>{$form.ticket_attach.html}
+            <span class="preview-link"><a target="_blank" href="{crmURL p='civicrm/admin/event/ticket/preview' h=0}" onclick="this.href = cj('#preview-url').val() + cj('#ticket_attach').val() + '&id={$eventId}'; return true;">Preview</a></span>
+            <span class="preview-text">Preview</span><br />
+            <span class="description">{ts}Specify a format for the event ticket, or 'None' to send no ticket.{/ts}</span>
+            <input id="preview-url" type="hidden" value="{crmURL p='civicrm/admin/event/ticket/preview' q='reset=1&template=' h=0}" />
+         </td>
+        </tr>
+        {literal}<script type="text/javascript">formatChange();</script>{/literal}
       </table>
     </div>
   </div>
