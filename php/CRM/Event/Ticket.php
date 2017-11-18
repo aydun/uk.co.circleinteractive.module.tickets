@@ -169,7 +169,21 @@ abstract class CRM_Event_Ticket {
       }
       $this->loadEntity('event', $params['event_id']);
       $this->loadEntity('contact', $this->participant['contact_id']);
-      $this->loadEntity('contribution', $params['contribution_id']);
+
+      // contribution_id may not be set - depends how this gets called
+      $contrib_id = CRM_Utils_Array::value('contribution_id', $params);
+      if ($contrib_id) {
+        $res = civicrm_api3('ParticipantPayment', 'get', array(
+          'sequential' => 1,
+          'participant_id' => $params['participant_id'],
+        ));
+        if ($res['count'] == 1) {
+          $contrib_id = $res['values'][0]['contribution_id'];
+        }
+      }
+      if ($contrib_id) {
+        $this->loadEntity('contribution', $contrib_id);
+      }
 
       // get membership (if any)
       $res = civicrm_api3('membership', 'get', array(
