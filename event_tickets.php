@@ -43,6 +43,14 @@ function event_tickets_civicrm_alterMailParams(&$params) {
       $is_additional_participant = ($participant_id != $primary_participant_id);
     }
 
+    $primary_participant = civicrm_api3('Participant', 'getsingle', array(
+      'participant_id' => $primary_participant_id,
+    ));
+    if ($primary_participant['participant_status'] != "Registered") {
+      // Only send tickets if primary participant is Registered - skip for other statuses
+      return;
+    }
+
     $template_class = event_tickets_get_template_for_event($event_id);
     if (!$template_class) {
       // Nothing to do if there's no template
@@ -61,8 +69,9 @@ function event_tickets_civicrm_alterMailParams(&$params) {
       // ... but I think you can't add multiple participants from an off-line signup so this is not needed
       // civicrm_api3('Participant', 'get', array('registered_by_id' => $primary_participant_id)) ... should work
       // but returns all participant.
+      // Only show those that are Registered / Status_id = 1
       $dao = CRM_Core_DAO::executeQuery("
-        SELECT id FROM civicrm_participant WHERE registered_by_id = %1
+        SELECT id FROM civicrm_participant WHERE registered_by_id = %1 AND status_id = 1
         ", array(
           1 => array($participant_id, 'Positive'),
         )

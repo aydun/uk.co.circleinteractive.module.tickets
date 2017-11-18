@@ -99,6 +99,7 @@ class CRM_Event_Form_Task_PrintTickets extends CRM_Event_Form_Task {
     }
 
     $no_template_warn = FALSE;
+    $not_registered_warn = FALSE;
     $temp_dir         = sys_get_temp_dir();
     $ticket_temp_dir  = $temp_dir . DIRECTORY_SEPARATOR . 'civicrm_event_tickets';
 
@@ -136,7 +137,11 @@ class CRM_Event_Form_Task_PrintTickets extends CRM_Event_Form_Task {
     }
 
     foreach ($rows as $row) {
-
+      if ($row['participant_status_id'] != 1) {
+        // Not registered
+        $not_registered_warn = TRUE;
+        continue;
+      }
       // get ticket class
       if (!$className = CRM_Core_DAO::singleValueQuery("
           SELECT template_class FROM civicrm_event_tickets
@@ -221,6 +226,15 @@ class CRM_Event_Form_Task_PrintTickets extends CRM_Event_Form_Task {
       }
       else {
         $msg = CRM_Core_Session::setStatus(ts('The event for the participant you selected did not have a ticket template selected. The ticket was not printed as a result.'));
+        return;
+      }
+    }
+    if ($not_registered_warn) {
+      if (count($rows) > 1) {
+        $msg = CRM_Core_Session::setStatus(ts('Tickets are only printed for participants who are Registered. Some of your selected participants are not Registered so some tickets were not printed.'));
+      }
+      else {
+        $msg = CRM_Core_Session::setStatus(ts('Tickets are only printed for participants who are Registered.  Your selected participant is not Registered so some tickets were not printed.'));
         return;
       }
     }
