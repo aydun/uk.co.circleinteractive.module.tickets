@@ -160,7 +160,13 @@ abstract class CRM_Event_Ticket {
     if (!$this->preview) {
 
       // retrieve the required entities
-      $this->loadEntity('participant', $params['participant_id']);
+      $this->loadEntity('participant', array(
+        'id' => $params['participant_id'],
+        'status_id' => "1",
+      ));
+      if (empty($this->participant)) {
+        return;
+      }
       $this->loadEntity('event', $params['event_id']);
       $this->loadEntity('contact', $this->participant['contact_id']);
       $this->loadEntity('contribution', $params['contribution_id']);
