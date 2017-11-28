@@ -11,7 +11,13 @@
 /**
  * Implements hook_civicrm_alterMailParams().
  */
-function event_tickets_civicrm_alterMailParams(&$params) {
+function event_tickets_civicrm_alterMailParams(&$params, $context = NULL) {
+  if (!empty($context) AND $context != "singleEmail") {
+    // In 4.6 this is called once and context is null
+    // In 4.7 this is called twice with contexts of 'singleMail' and 'messageTemplate'.  Only do singleEmail
+    // Awkward condition construction, but avoids being tripped up if new contexts are added
+    return;
+  }
   static $runCount = 0;
 
   if ($params['groupName'] == 'msg_tpl_workflow_event') {
