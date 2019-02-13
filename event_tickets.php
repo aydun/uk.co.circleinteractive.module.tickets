@@ -369,9 +369,8 @@ function event_tickets_load_templates() {
 }
 
 /**
- * Get CiviCRM version as float (1 decimal place)
+ * Get CiviCRM version
  */
 function _event_tickets_crm_version() {
-  $crmversion = explode('.', preg_replace('[^0-9\.]', '', CRM_Utils_System::version()));
-  return floatval($crmversion[0] . '.' . $crmversion[1]);
+  return CRM_Utils_System::majorVersion();
 }
