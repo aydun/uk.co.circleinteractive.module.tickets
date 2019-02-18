@@ -47,6 +47,7 @@ class CRM_Event_Ticket_Example extends CRM_Event_Ticket {
       $this->event['title']                        = 'Test Event';
       $this->contact['first_name']                 = 'John';
       $this->contact['last_name']                  = 'Smith';
+      $this->contact['sort_name']                  = 'Smith, John';
       $this->event['id']                           = 1;
       $this->contact['id']                         = 1;
       $this->participant['id']                     = 1;
@@ -60,10 +61,10 @@ class CRM_Event_Ticket_Example extends CRM_Event_Ticket {
       );
       $this->event['start_date'] = date('c');
     }
-    $pdf->addTTFfont($this->fonts_dir . '/Verdana.ttf', '', '', 32);
-    $pdf->addTTFfont($this->fonts_dir . '/Verdana Bold.ttf', '', '', 32);
-    $pdf->addTTFfont($this->fonts_dir . '/Verdana Italic.ttf', '', '', 32);
-    $pdf->addTTFfont($this->fonts_dir . '/Verdana Bold Italic.ttf', '', '', 32);
+    TCPDF_FONTS::addTTFfont($this->fonts_dir . '/Verdana.ttf', '', '', 32);
+    TCPDF_FONTS::addTTFfont($this->fonts_dir . '/Verdana Bold.ttf', '', '', 32);
+    TCPDF_FONTS::addTTFfont($this->fonts_dir . '/Verdana Italic.ttf', '', '', 32);
+    TCPDF_FONTS::addTTFfont($this->fonts_dir . '/Verdana Bold Italic.ttf', '', '', 32);
   }
 
   public function printBody() {
@@ -159,7 +160,7 @@ class CRM_Event_Ticket_Example extends CRM_Event_Ticket {
 
     // centre column (address)
     $pdf->WriteHTMLCell(60, 30, $pdf->left + 59, $pdf->top + 39.5,
-      "<div style=\"line-height:0.48mm;\">" . implode('<br />', $main_text) . "</div>",
+      implode('<br />', $main_text),
       0, 0, FALSE, 1, '');
 
     // Footer / QR Code

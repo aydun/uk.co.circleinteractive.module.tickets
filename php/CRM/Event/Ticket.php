@@ -143,8 +143,8 @@ abstract class CRM_Event_Ticket {
       }
     }
 
-    $pdf->addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Regular.ttf', '', '', 32);
-    $pdf->addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Semibold.ttf', '', '', 32);
+    TCPDF_FONTS::addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Regular.ttf', '', '', 32);
+    TCPDF_FONTS::addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Semibold.ttf', '', '', 32);
 
     if (!isset($this->fontSize)) {
       $this->fontSize = 10;

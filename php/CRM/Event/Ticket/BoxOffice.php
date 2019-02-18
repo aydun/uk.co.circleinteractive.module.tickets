@@ -92,15 +92,15 @@ class CRM_Event_Ticket_BoxOffice extends CRM_Event_Ticket {
 
     //$pdf->addTTFfont(__DIR__ . '/fonts/arcade.ttf', '', '', 32);
     //$pdf->addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'Arcade.ttf', '', '', 32);
-    $pdf->addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Regular.ttf', '', '', 32);
-    $pdf->addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Semibold.ttf', '', '', 32);
-    $pdf->addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Bold.ttf', '', '', 32);
+    TCPDF_FONTS::addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Regular.ttf', '', '', 32);
+    TCPDF_FONTS::addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Semibold.ttf', '', '', 32);
+    TCPDF_FONTS::addTTFfont($this->fonts_dir . DIRECTORY_SEPARATOR . 'SourceSansPro-Bold.ttf', '', '', 32);
 
     $this->primary_font    = 'arcade';
     $this->secondary_font  = 'sourcesansprob';
     $this->barcode_font    = 'sourcesansprosemib';
 
-    $this->primary_font = $pdf->addTTFfont(__DIR__ . '/fonts/VT323-Regular.ttf', '', '', 32);
+    $this->primary_font = TCPDF_FONTS::addTTFfont(__DIR__ . '/fonts/VT323-Regular.ttf', '', '', 32);
 
     //echo dirname(__FILE__) . '/fonts/dotmatri.php<br />';
     //exit;
@@ -238,9 +238,9 @@ class CRM_Event_Ticket_BoxOffice extends CRM_Event_Ticket {
 
     // centre box values
     $pdf->SetFont($this->primary_font, '', 18);
-    $pdf->writeHTMLCell(82, '', 42.5, 40, $html = '<span style="line-height:0.77em">' . strtoupper($this->event['event_title']) . '</span>', $border = 0, $ln = 1, $fill = 0, $reseth = TRUE, $align = 'C', $autopadding = TRUE);
+    $pdf->writeHTMLCell(82, '', 42.5, 40, $html = strtoupper($this->event['event_title']), $border = 0, $ln = 1, $fill = 0, $reseth = TRUE, $align = 'C', $autopadding = TRUE);
     $pdf->SetFont($this->primary_font, '', 13);
-    $pdf->writeHTMLCell(72, 30, 47.5, '', $html = '<span style="line-height:0.75em">CIRCLE INTERACTIVE, CREATE CENTRE, SMEATON ROAD, BRISTOL, BS1 6XN</span>', $border = 0, $ln = 0, $fill = 0, $reseth = TRUE, $align = 'C', $autopadding = TRUE);
+    $pdf->writeHTMLCell(72, 30, 47.5, '', $html = 'CIRCLE INTERACTIVE, CREATE CENTRE, SMEATON ROAD, BRISTOL, BS1 6XN', $border = 0, $ln = 0, $fill = 0, $reseth = TRUE, $align = 'C', $autopadding = TRUE);
     $pdf->SetFont($this->primary_font, '', 18);
 
     $pdf->writeHTMLCell(82, 20, 42.5, 69, $html = '<span style="line-height:0.66em">' . strtoupper(date('D M d Y g:i A', strtotime($this->event['start_date']))) . '</span>', $border = 0, $ln = 0, $fill = 0, $reseth = TRUE, $align = 'C', $autopadding = TRUE);

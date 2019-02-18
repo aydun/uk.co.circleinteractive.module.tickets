@@ -11,6 +11,8 @@ require_once implode(
   array(
     CRM_Core_Config::singleton()->extensionsDir,
     'uk.co.circleinteractive.module.tickets',
+    'vendor',
+    'tecnickcom',
     'tcpdf',
     'tcpdf.php',
   )
