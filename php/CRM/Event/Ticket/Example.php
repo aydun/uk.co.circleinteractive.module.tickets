@@ -121,7 +121,7 @@ class CRM_Event_Ticket_Example extends CRM_Event_Ticket {
     }
     $pdf->MultiCell(40, '', 'TICKET TYPE: ' . $fee_level, 0, 'L', TRUE, 1, '', '', TRUE, 0, FALSE, TRUE, 0, 'M');
 
-    $fee_amount = $this->participant['participant_fee_amount'] / (1 + $this->additional_participants_same_person);
+    $fee_amount = (!empty($this->participant['participant_fee_amount']) ? $this->participant['participant_fee_amount'] : 0) / (1 + $this->additional_participants_same_person);
     $pdf->SetXY($pdf->left + 126.8, $pdf->top + 28.1);
     $pdf->SetFont('helvetica', '', $pdf->fontSize);
     $pdf->MultiCell(40, '', CRM_Utils_Money::format($fee_amount), 0, 'R', TRUE, 1, '', '', TRUE, 0, FALSE, TRUE, 0, 'M');
