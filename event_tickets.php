@@ -238,7 +238,7 @@ function event_tickets_civicrm_postProcess($formName, &$form) {
   switch ($formName) {
     // save pdf template details on ManageEvent and ContributionPage admin forms
     case 'CRM_Event_Form_ManageEvent_Registration':
-    case 'CRM_Contribute_Form_ContributionPage_ThankYou':
+    // case 'CRM_Contribute_Form_ContributionPage_ThankYou':
 
       if ($current_entry_id = CRM_Core_DAO::singleValueQuery("
         SELECT id
